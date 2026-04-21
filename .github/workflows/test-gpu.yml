@@ -49,10 +49,12 @@ jobs:
         shell: bash
         env:
           COMFY_TEST_GPU: "1"
+          COMFY_TEST_LOGS_DIR: ${{ runner.temp }}/comfy-test-logs
+          COMFY_TEST_WORKSPACE_DIR: ${{ runner.temp }}/comfy-test-workspace
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: results-${{ inputs.platform }}
-          path: comfy-test-logs/
+          path: ${{ runner.temp }}/comfy-test-logs/
           if-no-files-found: ignore
