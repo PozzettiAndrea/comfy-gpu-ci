@@ -1,0 +1,41 @@
+name: GPU CI
+run-name: "${{ inputs.node_repo }} (${{ inputs.platform }}, ${{ inputs.branch }})"
+
+on:
+  workflow_dispatch:
+    inputs:
+      node_repo:
+        description: 'Node repo (e.g. PozzettiAndrea/ComfyUI-SAM3)'
+        type: string
+        required: true
+      branch:
+        description: 'Branch to test'
+        type: string
+        default: 'dev'
+      platform:
+        description: 'GPU platform to test'
+        type: choice
+        options:
+          - windows-gpu
+          - linux-gpu
+          - windows-portable-gpu
+        default: windows-gpu
+
+jobs:
+  test:
+    runs-on: >-
+      ${{ contains(inputs.platform, 'linux')
+          && fromJson('["self-hosted","linux","cuda"]')
+          || fromJson('["self-hosted","windows","cuda"]') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.node_repo }}
+          ref: ${{ inputs.branch }}
+          token: ${{ secrets.NODE_PAT }}
+
+      - name: Run GPU tests
+        run: comfy-test run --platform ${{ inputs.platform }} --branch ${{ inputs.branch }} --gpu --publish ${{ inputs.node_repo }}
+        env:
+          COMFY_TEST_GPU: "1"
+          GITHUB_TOKEN: ${{ secrets.NODE_PAT }}
