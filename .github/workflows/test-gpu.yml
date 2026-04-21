@@ -34,8 +34,17 @@ jobs:
           ref: ${{ inputs.branch }}
           token: ${{ secrets.NODE_PAT }}
 
+      - name: Install comfy-test
+        run: pip install comfy-test
+
       - name: Run GPU tests
-        run: comfy-test run --platform ${{ inputs.platform }} --branch ${{ inputs.branch }} --gpu --publish ${{ inputs.node_repo }}
+        run: comfy-test run --platform ${{ inputs.platform }} --branch ${{ inputs.branch }} --gpu
         env:
           COMFY_TEST_GPU: "1"
-          GITHUB_TOKEN: ${{ secrets.NODE_PAT }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: results-${{ inputs.platform }}
+          path: comfy-test-logs/
+          if-no-files-found: ignore
