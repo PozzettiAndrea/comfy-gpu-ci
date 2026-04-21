@@ -38,7 +38,15 @@ jobs:
         run: pip install comfy-test
 
       - name: Run GPU tests
-        run: comfy-test run --platform ${{ inputs.platform }} --branch ${{ inputs.branch }} --gpu
+        run: |
+          # Map platform input to comfy-test --platform flag
+          # windows-gpu → --platform windows --gpu
+          # linux-gpu → --platform linux --gpu
+          # windows-portable-gpu → --platform windows-portable --gpu
+          PLATFORM="${{ inputs.platform }}"
+          CT_PLATFORM="${PLATFORM%-gpu}"
+          comfy-test run --platform "$CT_PLATFORM" --branch ${{ inputs.branch }} --gpu
+        shell: bash
         env:
           COMFY_TEST_GPU: "1"
 
