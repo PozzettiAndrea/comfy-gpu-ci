@@ -28,40 +28,16 @@ jobs:
           && fromJson('["self-hosted","linux","cuda"]')
           || fromJson('["self-hosted","windows","cuda"]') }}
     steps:
-      - name: Derive node name
-        id: node
-        shell: bash
-        run: |
-          FULL="${{ inputs.node_repo }}"
-          NAME="${FULL##*/}"
-          echo "name=$NAME" >> $GITHUB_OUTPUT
-
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.node_repo }}
-          ref: ${{ inputs.branch }}
-          token: ${{ secrets.NODE_PAT }}
-          path: ${{ steps.node.outputs.name }}
+      - name: Install comfy-test
+        run: pip install --upgrade comfy-test
 
       - name: Run GPU tests (Docker)
-        shell: bash
-        run: |
-          PLATFORM="${{ inputs.platform }}"
-          CT_PLATFORM="${PLATFORM%-gpu}"
-          NODE="${{ steps.node.outputs.name }}"
-          LOGS="${{ runner.temp }}/comfy-test-logs"
-          mkdir -p "$LOGS"
-
-          docker run --rm --isolation=process \
-            --device "class/5B45201D-F2F2-4F3B-85BB-30FF1F953599" \
-            -v "${{ github.workspace }}/${NODE}:C:\\${NODE}" \
-            -v "${LOGS}:C:\\logs" \
-            -w "C:\\${NODE}" \
-            -e COMFY_TEST_GPU=1 \
-            -e COMFY_TEST_LOGS_DIR="C:\\logs" \
-            -e COMFY_TEST_WORKSPACE_DIR="C:\\workspaces" \
-            comfy-test-windows-gpu:full \
-            run --platform "$CT_PLATFORM" --branch ${{ inputs.branch }} --gpu
+        run: >-
+          comfy-test dockertest
+          https://github.com/${{ inputs.node_repo }}.git
+          --branch ${{ inputs.branch }}
+          --gpu
+          --logs-dir ${{ runner.temp }}/comfy-test-logs
 
       - uses: actions/upload-artifact@v4
         if: always()
