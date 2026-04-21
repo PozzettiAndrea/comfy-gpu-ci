@@ -27,17 +27,20 @@ jobs:
       ${{ contains(inputs.platform, 'linux')
           && fromJson('["self-hosted","linux","cuda"]')
           || fromJson('["self-hosted","windows","cuda"]') }}
+    env:
+      PYTHONIOENCODING: utf-8
     steps:
       - name: Install comfy-test
         run: pip install --upgrade comfy-test
 
       - name: Run GPU tests (Docker)
-        run: >-
-          comfy-test dockertest
-          https://github.com/${{ inputs.node_repo }}.git
-          --branch ${{ inputs.branch }}
-          --gpu
-          --logs-dir ${{ runner.temp }}/comfy-test-logs
+        shell: bash
+        run: |
+          comfy-test dockertest \
+            "https://github.com/${{ inputs.node_repo }}.git" \
+            --branch "${{ inputs.branch }}" \
+            --gpu \
+            --logs-dir "${{ runner.temp }}/comfy-test-logs"
 
       - uses: actions/upload-artifact@v4
         if: always()
