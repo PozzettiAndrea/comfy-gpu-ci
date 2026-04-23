@@ -45,6 +45,17 @@ jobs:
             --gpu \
             --logs-dir "${{ runner.temp }}/comfy-test-logs"
 
+      - name: Publish results to gh-pages
+        if: always()
+        shell: bash
+        env:
+          NODE_PAT: ${{ secrets.NODE_PAT }}
+        run: |
+          git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$NODE_PAT"; }; f'
+          git config --global user.email "ci@scan2wall.com"
+          git config --global user.name "comfy-gpu-ci"
+          comfy-test publish "${{ runner.temp }}/comfy-test-logs" --repo "${{ inputs.node_repo }}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
