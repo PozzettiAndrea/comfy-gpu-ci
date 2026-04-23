@@ -31,7 +31,10 @@ jobs:
       PYTHONIOENCODING: utf-8
     steps:
       - name: Install comfy-test
-        run: pip install --upgrade --break-system-packages comfy-test
+        shell: bash
+        run: |
+          pip install --upgrade --break-system-packages comfy-test
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Run GPU tests (Docker)
         shell: bash
