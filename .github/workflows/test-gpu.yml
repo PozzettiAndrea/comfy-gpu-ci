@@ -57,6 +57,9 @@ jobs:
           git config --global credential.helper store
           echo "https://x-access-token:${NODE_PAT}@github.com" > ~/.git-credentials
 
+          # Docker writes files as root — fix ownership so publish can overwrite index.html
+          sudo chown -R "$(id -u):$(id -g)" "${{ runner.temp }}/comfy-test-logs" 2>/dev/null || true
+
           RESULTS=$(find "${{ runner.temp }}/comfy-test-logs" -path "*/${{ inputs.branch }}/${{ inputs.platform }}/results.json" | head -1)
           if [ -z "$RESULTS" ]; then echo "No results found, skipping publish"; exit 0; fi
 
