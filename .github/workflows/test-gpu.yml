@@ -51,10 +51,16 @@ jobs:
         env:
           NODE_PAT: ${{ secrets.NODE_PAT }}
         run: |
-          git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$NODE_PAT"; }; f'
+          pip install --upgrade --break-system-packages comfy-test
           git config --global user.email "ci@scan2wall.com"
           git config --global user.name "comfy-gpu-ci"
-          comfy-test publish "${{ runner.temp }}/comfy-test-logs" --repo "${{ inputs.node_repo }}"
+          git config --global credential.helper store
+          echo "https://x-access-token:${NODE_PAT}@github.com" > ~/.git-credentials
+
+          RESULTS=$(find "${{ runner.temp }}/comfy-test-logs" -path "*/${{ inputs.branch }}/${{ inputs.platform }}/results.json" | head -1)
+          if [ -z "$RESULTS" ]; then echo "No results found, skipping publish"; exit 0; fi
+
+          comfy-test publish "$(dirname "$RESULTS")" --repo "${{ inputs.node_repo }}"
 
       - uses: actions/upload-artifact@v4
         if: always()
