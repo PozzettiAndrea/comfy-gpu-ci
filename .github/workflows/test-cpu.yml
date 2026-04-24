@@ -1,0 +1,65 @@
+name: CPU CI
+run-name: "${{ inputs.node_repo }} (${{ inputs.platform }}, ${{ inputs.branch }})"
+
+on:
+  workflow_dispatch:
+    inputs:
+      node_repo:
+        description: "Node repo (e.g. PozzettiAndrea/ComfyUI-SAM3)"
+        type: string
+        required: true
+      branch:
+        description: "Branch to test"
+        type: string
+        default: "dev"
+      platform:
+        description: "CPU platform to test"
+        type: choice
+        options:
+          - linux-cpu
+          - macos-cpu
+          - windows-cpu
+          - windows-portable-cpu
+        default: linux-cpu
+
+jobs:
+  linux-cpu:
+    if: inputs.platform == 'linux-cpu'
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-linux.yml@v0.3.0
+    with:
+      node_repo: ${{ inputs.node_repo }}
+      node_branch: ${{ inputs.branch }}
+    secrets: inherit
+
+  macos-cpu:
+    if: inputs.platform == 'macos-cpu'
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos.yml@v0.3.0
+    with:
+      node_repo: ${{ inputs.node_repo }}
+      node_branch: ${{ inputs.branch }}
+    secrets: inherit
+
+  windows-cpu:
+    if: inputs.platform == 'windows-cpu'
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows.yml@v0.3.0
+    with:
+      node_repo: ${{ inputs.node_repo }}
+      node_branch: ${{ inputs.branch }}
+    secrets: inherit
+
+  windows-portable-cpu:
+    if: inputs.platform == 'windows-portable-cpu'
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows-portable.yml@v0.3.0
+    with:
+      node_repo: ${{ inputs.node_repo }}
+      node_branch: ${{ inputs.branch }}
+    secrets: inherit
+
+  publish:
+    needs: [linux-cpu, macos-cpu, windows-cpu, windows-portable-cpu]
+    if: always()
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_publish-results.yml@v0.3.0
+    with:
+      node_repo: ${{ inputs.node_repo }}
+      node_branch: ${{ inputs.branch }}
+    secrets: inherit
