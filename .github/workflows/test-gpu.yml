@@ -30,13 +30,21 @@ jobs:
     env:
       PYTHONIOENCODING: utf-8
     steps:
-      - name: Install comfy-test
+      - name: Install comfy-test (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           pip install --upgrade --break-system-packages comfy-test
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Run GPU tests (Docker)
+      - name: Install comfy-test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          pip install --upgrade comfy-test
+
+      - name: Run GPU tests (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           comfy-test dockertest \
@@ -45,8 +53,18 @@ jobs:
             --gpu \
             --logs-dir "${{ runner.temp }}/comfy-test-logs"
 
-      - name: Publish results to gh-pages
-        if: always()
+      - name: Run GPU tests (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          comfy-test dockertest `
+            "https://github.com/${{ inputs.node_repo }}.git" `
+            --branch "${{ inputs.branch }}" `
+            --gpu `
+            --logs-dir "${{ runner.temp }}/comfy-test-logs"
+
+      - name: Publish results (Linux)
+        if: always() && runner.os == 'Linux'
         shell: bash
         env:
           NODE_PAT: ${{ secrets.NODE_PAT }}
@@ -57,13 +75,29 @@ jobs:
           git config --global credential.helper store
           echo "https://x-access-token:${NODE_PAT}@github.com" > ~/.git-credentials
 
-          # Docker writes files as root — fix ownership so publish can overwrite index.html
           sudo chown -R "$(id -u):$(id -g)" "${{ runner.temp }}/comfy-test-logs" 2>/dev/null || true
 
           RESULTS=$(find "${{ runner.temp }}/comfy-test-logs" -path "*/${{ inputs.branch }}/${{ inputs.platform }}/results.json" | head -1)
           if [ -z "$RESULTS" ]; then echo "No results found, skipping publish"; exit 0; fi
 
           comfy-test publish "$(dirname "$RESULTS")" --repo "${{ inputs.node_repo }}"
+
+      - name: Publish results (Windows)
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        env:
+          NODE_PAT: ${{ secrets.NODE_PAT }}
+        run: |
+          pip install --upgrade comfy-test
+          git config --global user.email "ci@scan2wall.com"
+          git config --global user.name "comfy-gpu-ci"
+          git config --global credential.helper store
+          "https://x-access-token:$($env:NODE_PAT)@github.com" | Out-File -FilePath "$HOME/.git-credentials" -Encoding ascii
+
+          $results = Get-ChildItem -Recurse -Path "${{ runner.temp }}/comfy-test-logs" -Filter "results.json" | Where-Object { $_.FullName -match "${{ inputs.branch }}[\\/]${{ inputs.platform }}" } | Select-Object -First 1
+          if (-not $results) { Write-Host "No results found, skipping publish"; exit 0 }
+
+          comfy-test publish $results.DirectoryName --repo "${{ inputs.node_repo }}"
 
       - uses: actions/upload-artifact@v4
         if: always()
