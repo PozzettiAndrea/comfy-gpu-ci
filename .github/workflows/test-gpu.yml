@@ -39,9 +39,8 @@ jobs:
 
       - name: Install comfy-test (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          pip install --upgrade comfy-test
+        shell: cmd
+        run: pip install --upgrade comfy-test
 
       - name: Run GPU tests (Linux)
         if: runner.os == 'Linux'
@@ -55,13 +54,8 @@ jobs:
 
       - name: Run GPU tests (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          comfy-test dockertest `
-            "https://github.com/${{ inputs.node_repo }}.git" `
-            --branch "${{ inputs.branch }}" `
-            --gpu `
-            --logs-dir "${{ runner.temp }}/comfy-test-logs"
+        shell: cmd
+        run: comfy-test dockertest "https://github.com/${{ inputs.node_repo }}.git" --branch "${{ inputs.branch }}" --gpu --logs-dir "${{ runner.temp }}\comfy-test-logs"
 
       - name: Publish results (Linux)
         if: always() && runner.os == 'Linux'
@@ -84,7 +78,7 @@ jobs:
 
       - name: Publish results (Windows)
         if: always() && runner.os == 'Windows'
-        shell: pwsh
+        shell: cmd
         env:
           NODE_PAT: ${{ secrets.NODE_PAT }}
         run: |
@@ -92,12 +86,10 @@ jobs:
           git config --global user.email "ci@scan2wall.com"
           git config --global user.name "comfy-gpu-ci"
           git config --global credential.helper store
-          "https://x-access-token:$($env:NODE_PAT)@github.com" | Out-File -FilePath "$HOME/.git-credentials" -Encoding ascii
-
-          $results = Get-ChildItem -Recurse -Path "${{ runner.temp }}/comfy-test-logs" -Filter "results.json" | Where-Object { $_.FullName -match "${{ inputs.branch }}[\\/]${{ inputs.platform }}" } | Select-Object -First 1
-          if (-not $results) { Write-Host "No results found, skipping publish"; exit 0 }
-
-          comfy-test publish $results.DirectoryName --repo "${{ inputs.node_repo }}"
+          echo https://x-access-token:%NODE_PAT%@github.com> "%USERPROFILE%\.git-credentials"
+          for /f "delims=" %%f in ('dir /s /b "${{ runner.temp }}\comfy-test-logs\${{ inputs.branch }}\${{ inputs.platform }}\results.json" 2^>nul') do set "RESULTS_DIR=%%~dpf"
+          if not defined RESULTS_DIR (echo No results found, skipping publish & exit /b 0)
+          comfy-test publish "%RESULTS_DIR%" --repo "${{ inputs.node_repo }}"
 
       - uses: actions/upload-artifact@v4
         if: always()
