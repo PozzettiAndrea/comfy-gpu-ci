@@ -21,14 +21,16 @@ on:
           - windows-portable-gpu
         default: windows-gpu
 
+env:
+  PYTHONIOENCODING: utf-8
+  CONDA_PATH: C:\Users\andredupuy\miniconda3
+
 jobs:
   test:
     runs-on: >-
       ${{ contains(inputs.platform, 'linux')
           && fromJson('["self-hosted","linux","cuda"]')
           || fromJson('["self-hosted","windows","cuda"]') }}
-    env:
-      PYTHONIOENCODING: utf-8
     steps:
       - name: Install comfy-test (Linux)
         if: runner.os == 'Linux'
@@ -37,18 +39,12 @@ jobs:
           pip install --upgrade --break-system-packages comfy-test
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Add miniconda to PATH (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          echo %USERPROFILE%\miniconda3>> "%GITHUB_PATH%"
-          echo %USERPROFILE%\miniconda3\Scripts>> "%GITHUB_PATH%"
-          echo %USERPROFILE%\miniconda3\Library\bin>> "%GITHUB_PATH%"
-
       - name: Install comfy-test (Windows)
         if: runner.os == 'Windows'
         shell: cmd
-        run: pip install --upgrade comfy-test
+        run: |
+          set "PATH=%CONDA_PATH%;%CONDA_PATH%\Scripts;%CONDA_PATH%\Library\bin;%PATH%"
+          pip install --upgrade comfy-test
 
       - name: Run GPU tests (Linux)
         if: runner.os == 'Linux'
@@ -63,7 +59,9 @@ jobs:
       - name: Run GPU tests (Windows)
         if: runner.os == 'Windows'
         shell: cmd
-        run: comfy-test dockertest "https://github.com/${{ inputs.node_repo }}.git" --branch "${{ inputs.branch }}" --gpu --logs-dir "${{ runner.temp }}\comfy-test-logs"
+        run: |
+          set "PATH=%CONDA_PATH%;%CONDA_PATH%\Scripts;%CONDA_PATH%\Library\bin;%PATH%"
+          comfy-test dockertest "https://github.com/${{ inputs.node_repo }}.git" --branch "${{ inputs.branch }}" --gpu --logs-dir "${{ runner.temp }}\comfy-test-logs"
 
       - name: Publish results (Linux)
         if: always() && runner.os == 'Linux'
@@ -90,6 +88,7 @@ jobs:
         env:
           NODE_PAT: ${{ secrets.NODE_PAT }}
         run: |
+          set "PATH=%CONDA_PATH%;%CONDA_PATH%\Scripts;%CONDA_PATH%\Library\bin;%PATH%"
           pip install --upgrade comfy-test
           git config --global user.email "ci@scan2wall.com"
           git config --global user.name "comfy-gpu-ci"
