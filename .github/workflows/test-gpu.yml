@@ -44,7 +44,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          set "PATH=%PY313%;%PY313_SCRIPTS%;%PATH%"
+          set "PATH=%PY313%;%PY313_SCRIPTS%;%APPDATA%\Python\Python313\Scripts;%PATH%"
           pip install --upgrade comfy-test
 
       - name: Run GPU tests (Linux)
@@ -61,7 +61,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          set "PATH=%PY313%;%PY313_SCRIPTS%;%PATH%"
+          set "PATH=%PY313%;%PY313_SCRIPTS%;%APPDATA%\Python\Python313\Scripts;%PATH%"
           comfy-test dockertest "https://github.com/${{ inputs.node_repo }}.git" --branch "${{ inputs.branch }}" --gpu --logs-dir "${{ runner.temp }}\comfy-test-logs"
 
       - name: Publish results (Linux)
@@ -89,7 +89,7 @@ jobs:
         env:
           NODE_PAT: ${{ secrets.NODE_PAT }}
         run: |
-          set "PATH=%PY313%;%PY313_SCRIPTS%;%PATH%"
+          set "PATH=%PY313%;%PY313_SCRIPTS%;%APPDATA%\Python\Python313\Scripts;%PATH%"
           pip install --upgrade comfy-test
           git config --global user.email "ci@scan2wall.com"
           git config --global user.name "comfy-gpu-ci"
