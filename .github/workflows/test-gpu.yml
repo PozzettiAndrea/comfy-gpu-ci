@@ -23,8 +23,8 @@ on:
 
 env:
   PYTHONIOENCODING: utf-8
-  CONDA_PATH: C:\Users\andredupuy\miniconda3
-  PIP_SCRIPTS: C:\Windows\ServiceProfiles\NetworkService\AppData\Roaming\Python\Python313\Scripts
+  PY313: C:\Program Files\Python313
+  PY313_SCRIPTS: C:\Program Files\Python313\Scripts
 
 jobs:
   test:
@@ -44,7 +44,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          set "PATH=%CONDA_PATH%;%CONDA_PATH%\Scripts;%CONDA_PATH%\Library\bin;%PIP_SCRIPTS%;%PATH%"
+          set "PATH=%PY313%;%PY313_SCRIPTS%;%PATH%"
           pip install --upgrade comfy-test
 
       - name: Run GPU tests (Linux)
@@ -61,7 +61,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          set "PATH=%CONDA_PATH%;%CONDA_PATH%\Scripts;%CONDA_PATH%\Library\bin;%PIP_SCRIPTS%;%PATH%"
+          set "PATH=%PY313%;%PY313_SCRIPTS%;%PATH%"
           comfy-test dockertest "https://github.com/${{ inputs.node_repo }}.git" --branch "${{ inputs.branch }}" --gpu --logs-dir "${{ runner.temp }}\comfy-test-logs"
 
       - name: Publish results (Linux)
@@ -89,7 +89,7 @@ jobs:
         env:
           NODE_PAT: ${{ secrets.NODE_PAT }}
         run: |
-          set "PATH=%CONDA_PATH%;%CONDA_PATH%\Scripts;%CONDA_PATH%\Library\bin;%PIP_SCRIPTS%;%PATH%"
+          set "PATH=%PY313%;%PY313_SCRIPTS%;%PATH%"
           pip install --upgrade comfy-test
           git config --global user.email "ci@scan2wall.com"
           git config --global user.name "comfy-gpu-ci"
