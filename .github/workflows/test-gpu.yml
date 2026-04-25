@@ -33,6 +33,16 @@ jobs:
           && fromJson('["self-hosted","linux","cuda"]')
           || fromJson('["self-hosted","windows","cuda"]') }}
     steps:
+      - name: Runner identity (debug)
+        shell: pwsh
+        run: |
+          echo "runner.name=${{ runner.name }} runner.os=${{ runner.os }} hostname=$env:COMPUTERNAME user=$(whoami)"
+          echo "--- whoami /groups ---"
+          whoami /groups
+          echo "--- docker info raw ---"
+          & 'C:\Program Files\Docker\docker.exe' info 2>&1 | Select-Object -First 30
+          echo "--- end debug ---"
+
       - name: Install comfy-test (Linux)
         if: runner.os == 'Linux'
         shell: bash
