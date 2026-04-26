@@ -33,7 +33,8 @@ jobs:
           && fromJson('["self-hosted","linux","cuda"]')
           || fromJson('["self-hosted","windows","cuda"]') }}
     steps:
-      - name: Runner identity (debug)
+      - name: Runner identity (debug, Windows)
+        if: runner.os == 'Windows'
         shell: cmd
         run: |
           echo runner.name=${{ runner.name }} runner.os=${{ runner.os }}
@@ -43,6 +44,20 @@ jobs:
           echo --- docker info ---
           "C:\Program Files\Docker\docker.exe" info
           echo --- end debug ---
+
+      - name: Runner identity (debug, Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          echo "runner.name=${{ runner.name }} runner.os=${{ runner.os }}"
+          echo "hostname=$(hostname) user=$(whoami)"
+          echo "--- id ---"
+          id
+          echo "--- docker info ---"
+          docker info 2>&1 | head -40 || echo "(docker info failed)"
+          echo "--- nvidia-smi ---"
+          nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>&1 || echo "(nvidia-smi failed)"
+          echo "--- end debug ---"
 
       - name: Install comfy-test (Linux)
         if: runner.os == 'Linux'
