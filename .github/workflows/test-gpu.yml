@@ -108,6 +108,7 @@ jobs:
           echo https://x-access-token:%NODE_PAT%@github.com> "%USERPROFILE%\.git-credentials"
           for /f "delims=" %%f in ('where /R "${{ runner.temp }}\comfy-test-logs" results.json 2^>nul ^| findstr /I /C:"\${{ inputs.branch }}\${{ inputs.platform }}\results.json"') do set "RESULTS_DIR=%%~dpf"
           if not defined RESULTS_DIR (echo No results found, skipping publish & exit /b 0)
+          if "%RESULTS_DIR:~-1%"=="\" set "RESULTS_DIR=%RESULTS_DIR:~0,-1%"
           comfy-test publish "%RESULTS_DIR%" --repo "${{ inputs.node_repo }}"
 
       - uses: actions/upload-artifact@v4
