@@ -93,7 +93,9 @@ jobs:
         shell: cmd
         run: |
           set "PATH=%PY313%;%PY313_SCRIPTS%;%APPDATA%\Python\Python313\Scripts;%PATH%"
-          comfy-test dockertest "https://github.com/${{ inputs.node_repo }}.git" --branch "${{ inputs.branch }}" --gpu --logs-dir "${{ runner.temp }}\comfy-test-logs"
+          set "PORTABLE_FLAG="
+          if /I "${{ inputs.platform }}"=="windows-portable-gpu" set "PORTABLE_FLAG=--portable"
+          comfy-test dockertest "https://github.com/${{ inputs.node_repo }}.git" --branch "${{ inputs.branch }}" --gpu %PORTABLE_FLAG% --logs-dir "${{ runner.temp }}\comfy-test-logs"
 
       - name: Publish results (Linux)
         if: always() && runner.os == 'Linux'
