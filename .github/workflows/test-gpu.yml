@@ -111,7 +111,15 @@ jobs:
 
           sudo chown -R "$(id -u):$(id -g)" "${{ runner.temp }}/comfy-test-logs" 2>/dev/null || true
 
-          RESULTS=$(find "${{ runner.temp }}/comfy-test-logs" -path "*/${{ inputs.branch }}/${{ inputs.platform }}/results.json" | head -1)
+          # Scope to this run's node — comfy-test names per-run dirs <SHORT>-<HHMM>
+          # where SHORT = node_repo basename minus "ComfyUI-" prefix (see
+          # comfy-test cli/dockertest.py:429). Without this scope, a stale
+          # <OTHER>-<HHMM>/dev/<platform>/results.json from a previous run on
+          # the same self-hosted runner could be picked up and published.
+          NODE_REPO_INPUT="${{ inputs.node_repo }}"
+          NODE_BASE="${NODE_REPO_INPUT##*/}"
+          SHORT_NAME="${NODE_BASE#ComfyUI-}"
+          RESULTS=$(find "${{ runner.temp }}/comfy-test-logs" -path "*/${SHORT_NAME}-*/${{ inputs.branch }}/${{ inputs.platform }}/results.json" | head -1)
           if [ -z "$RESULTS" ]; then echo "No results found, skipping publish"; exit 0; fi
 
           comfy-test publish "$(dirname "$RESULTS")" --repo "${{ inputs.node_repo }}"
@@ -128,7 +136,15 @@ jobs:
           git config --global user.name "comfy-gpu-ci"
           git config --global credential.helper store
           echo https://x-access-token:%NODE_PAT%@github.com> "%USERPROFILE%\.git-credentials"
-          for /f "delims=" %%f in ('where /R "${{ runner.temp }}\comfy-test-logs" results.json 2^>nul ^| findstr /I /C:"\${{ inputs.branch }}\${{ inputs.platform }}\results.json"') do set "RESULTS_DIR=%%~dpf"
+          rem Scope to this run's node — comfy-test names per-run dirs <SHORT>-<HHMM>
+          rem where SHORT = node_repo basename minus "ComfyUI-" prefix (see
+          rem comfy-test cli/dockertest.py:429). Without this scope, a stale
+          rem <OTHER>-<HHMM>\dev\<platform>\results.json from a previous run on
+          rem the same self-hosted runner could be picked up and published.
+          set "NODE_REPO_INPUT=${{ inputs.node_repo }}"
+          for /f "tokens=2 delims=/" %%a in ("%NODE_REPO_INPUT%") do set "NODE_BASE=%%a"
+          set "SHORT_NAME=%NODE_BASE:ComfyUI-=%"
+          for /f "delims=" %%f in ('where /R "${{ runner.temp }}\comfy-test-logs" results.json 2^>nul ^| findstr /I /C:"\%SHORT_NAME%-" ^| findstr /I /C:"\${{ inputs.branch }}\${{ inputs.platform }}\results.json"') do set "RESULTS_DIR=%%~dpf"
           if not defined RESULTS_DIR (echo No results found, skipping publish & exit /b 0)
           if "%RESULTS_DIR:~-1%"=="\" set "RESULTS_DIR=%RESULTS_DIR:~0,-1%"
           comfy-test publish "%RESULTS_DIR%" --repo "${{ inputs.node_repo }}"
