@@ -63,7 +63,10 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          pip install --upgrade --break-system-packages comfy-test
+          # Install system-wide so `sudo comfy-test` works in Run GPU tests
+          # (without sudo, the post-test _patch_null_commit_hash fails with
+          # PermissionError on the docker-container-written results.json).
+          sudo pip install --upgrade --break-system-packages comfy-test
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Install comfy-test (Windows)
@@ -77,7 +80,9 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          comfy-test dockertest \
+          # sudo so comfy-test's post-run _patch_null_commit_hash can rewrite
+          # the docker-container-written (root-owned) results.json.
+          sudo comfy-test dockertest \
             "https://github.com/${{ inputs.node_repo }}.git" \
             --branch "${{ inputs.branch }}" \
             --gpu \
