@@ -33,10 +33,11 @@ jobs:
 
   macos-cpu:
     if: inputs.platform == 'macos-cpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos.yml@v0.3.0
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos.yml@v0.3.1
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
+      runs_on: macos-13
     secrets: inherit
 
   windows-cpu:
