@@ -33,7 +33,7 @@ jobs:
 
   macos-cpu:
     if: inputs.platform == 'macos-cpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos.yml@v0.3.20
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos.yml@v0.3.22
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
