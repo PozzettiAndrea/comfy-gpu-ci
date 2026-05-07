@@ -17,6 +17,7 @@ on:
         type: choice
         options:
           - windows-gpu
+          - windows-desktop-gpu
           - linux-gpu
           - windows-portable-gpu
         default: windows-gpu
@@ -27,7 +28,16 @@ env:
   PY313_SCRIPTS: C:\Program Files\Python313\Scripts
 
 jobs:
+  windows-desktop-gpu:
+    if: inputs.platform == 'windows-desktop-gpu'
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows-desktop-gpu.yml@main
+    with:
+      node_repo: ${{ inputs.node_repo }}
+      node_branch: ${{ inputs.branch }}
+    secrets: inherit
+
   test:
+    if: inputs.platform != 'windows-desktop-gpu'
     runs-on: >-
       ${{ contains(inputs.platform, 'linux')
           && fromJson('["self-hosted","linux","cuda"]')
