@@ -18,6 +18,7 @@ on:
         options:
           - linux-cpu
           - macos-cpu
+          - macos-desktop
           - windows-cpu
           - windows-portable-cpu
         default: linux-cpu
@@ -34,6 +35,14 @@ jobs:
   macos-cpu:
     if: inputs.platform == 'macos-cpu'
     uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos.yml@v0.3.32
+    with:
+      node_repo: ${{ inputs.node_repo }}
+      node_branch: ${{ inputs.branch }}
+    secrets: inherit
+
+  macos-desktop:
+    if: inputs.platform == 'macos-desktop'
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos-desktop.yml@main
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
@@ -56,7 +65,7 @@ jobs:
     secrets: inherit
 
   publish:
-    needs: [linux-cpu, macos-cpu, windows-cpu, windows-portable-cpu]
+    needs: [linux-cpu, macos-cpu, macos-desktop, windows-cpu, windows-portable-cpu]
     if: always()
     uses: PozzettiAndrea/comfy-test/.github/workflows/_publish-results.yml@v0.3.32
     with:
