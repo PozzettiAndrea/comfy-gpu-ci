@@ -27,7 +27,7 @@ on:
 jobs:
   linux-cpu:
     if: inputs.platform == 'linux-cpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-linux.yml@v0.3.36
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-linux.yml@v0.3.37
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
@@ -35,7 +35,7 @@ jobs:
 
   macos-cpu:
     if: inputs.platform == 'macos-cpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos.yml@v0.3.36
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos.yml@v0.3.37
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
@@ -43,7 +43,7 @@ jobs:
 
   macos-desktop:
     if: inputs.platform == 'macos-desktop'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos-desktop.yml@v0.3.36
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos-desktop.yml@v0.3.37
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
@@ -51,7 +51,7 @@ jobs:
 
   windows-desktop:
     if: inputs.platform == 'windows-desktop'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows-desktop.yml@v0.3.36
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows-desktop.yml@v0.3.37
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
@@ -59,7 +59,7 @@ jobs:
 
   windows-cpu:
     if: inputs.platform == 'windows-cpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows.yml@v0.3.36
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows.yml@v0.3.37
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
@@ -67,7 +67,7 @@ jobs:
 
   windows-portable-cpu:
     if: inputs.platform == 'windows-portable-cpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows-portable.yml@v0.3.36
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows-portable.yml@v0.3.37
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
@@ -76,7 +76,7 @@ jobs:
   publish:
     needs: [linux-cpu, macos-cpu, macos-desktop, windows-cpu, windows-desktop, windows-portable-cpu]
     if: always()
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_publish-results.yml@v0.3.36
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_publish-results.yml@v0.3.37
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
