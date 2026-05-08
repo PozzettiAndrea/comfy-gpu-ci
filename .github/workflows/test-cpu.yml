@@ -76,7 +76,7 @@ jobs:
   publish:
     needs: [linux-cpu, macos-cpu, macos-desktop, windows-cpu, windows-desktop, windows-portable-cpu]
     if: always()
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_publish-results.yml@v0.3.35
+    uses: PozzettiAndrea/comfy-test/.github/workflows/_publish-results.yml@main
     with:
       node_repo: ${{ inputs.node_repo }}
       node_branch: ${{ inputs.branch }}
