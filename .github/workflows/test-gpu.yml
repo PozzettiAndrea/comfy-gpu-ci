@@ -1,167 +1,36 @@
 name: GPU CI
 run-name: "${{ inputs.node_repo }} (${{ inputs.platform }}, ${{ inputs.branch }})"
 
+# Thin shim — actual logic lives in comfy-test/.github/workflows/dispatch-test.yml.
+# This repo is the entry point our self-hosted runners are enrolled against;
+# everything else (docker run, publish) is in comfy-test.
+
 on:
   workflow_dispatch:
     inputs:
       node_repo:
-        description: 'Node repo (e.g. PozzettiAndrea/ComfyUI-SAM3)'
+        description: "Node repo (e.g. PozzettiAndrea/ComfyUI-SAM3)"
         type: string
         required: true
       branch:
-        description: 'Branch to test'
+        description: "Branch to test"
         type: string
-        default: 'dev'
+        default: "dev"
       platform:
-        description: 'GPU platform to test'
+        description: "GPU platform to test"
         type: choice
         options:
-          - windows-gpu
-          - windows-desktop-gpu
           - linux-gpu
+          - windows-gpu
           - windows-portable-gpu
+          - windows-desktop-gpu
         default: windows-gpu
 
-env:
-  PYTHONIOENCODING: utf-8
-  PY313: C:\Program Files\Python313
-  PY313_SCRIPTS: C:\Program Files\Python313\Scripts
-
 jobs:
-  windows-desktop-gpu:
-    if: inputs.platform == 'windows-desktop-gpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows-desktop-gpu.yml@main
+  test:
+    uses: PozzettiAndrea/comfy-test/.github/workflows/dispatch-test.yml@main
     with:
       node_repo: ${{ inputs.node_repo }}
-      node_branch: ${{ inputs.branch }}
+      branch: ${{ inputs.branch }}
+      platform: ${{ inputs.platform }}
     secrets: inherit
-
-  test:
-    if: inputs.platform != 'windows-desktop-gpu'
-    runs-on: >-
-      ${{ contains(inputs.platform, 'linux')
-          && fromJson('["self-hosted","linux","cuda"]')
-          || fromJson('["self-hosted","windows","cuda"]') }}
-    steps:
-      - name: Runner identity (debug, Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          echo runner.name=${{ runner.name }} runner.os=${{ runner.os }}
-          echo hostname=%COMPUTERNAME% user=%USERNAME%
-          echo --- whoami /groups ---
-          whoami /groups
-          echo --- docker info ---
-          "C:\Program Files\Docker\docker.exe" info
-          echo --- end debug ---
-
-      - name: Runner identity (debug, Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          echo "runner.name=${{ runner.name }} runner.os=${{ runner.os }}"
-          echo "hostname=$(hostname) user=$(whoami)"
-          echo "--- id ---"
-          id
-          echo "--- docker info ---"
-          docker info 2>&1 | head -40 || echo "(docker info failed)"
-          echo "--- nvidia-smi ---"
-          nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>&1 || echo "(nvidia-smi failed)"
-          echo "--- end debug ---"
-
-      - name: Install comfy-test (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          # Install system-wide so `sudo comfy-test` works in Run GPU tests
-          # (without sudo, the post-test _patch_null_commit_hash fails with
-          # PermissionError on the docker-container-written results.json).
-          sudo pip install --upgrade --break-system-packages comfy-test
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Install comfy-test (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          set "PATH=%PY313%;%PY313_SCRIPTS%;%APPDATA%\Python\Python313\Scripts;%PATH%"
-          pip install --upgrade comfy-test
-
-      - name: Run GPU tests (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          # sudo so comfy-test's post-run _patch_null_commit_hash can rewrite
-          # the docker-container-written (root-owned) results.json.
-          sudo comfy-test dockertest \
-            "https://github.com/${{ inputs.node_repo }}.git" \
-            --branch "${{ inputs.branch }}" \
-            --gpu \
-            --logs-dir "${{ runner.temp }}/comfy-test-logs"
-
-      - name: Run GPU tests (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          set "PATH=%PY313%;%PY313_SCRIPTS%;%APPDATA%\Python\Python313\Scripts;%PATH%"
-          set "PORTABLE_FLAG="
-          if /I "${{ inputs.platform }}"=="windows-portable-gpu" set "PORTABLE_FLAG=--portable"
-          comfy-test dockertest "https://github.com/${{ inputs.node_repo }}.git" --branch "${{ inputs.branch }}" --gpu %PORTABLE_FLAG% --logs-dir "${{ runner.temp }}\comfy-test-logs"
-
-      - name: Publish results (Linux)
-        if: always() && runner.os == 'Linux'
-        shell: bash
-        env:
-          NODE_PAT: ${{ secrets.NODE_PAT }}
-        run: |
-          pip install --upgrade --break-system-packages comfy-test
-          git config --global user.email "ci@scan2wall.com"
-          git config --global user.name "comfy-gpu-ci"
-          git config --global credential.helper store
-          echo "https://x-access-token:${NODE_PAT}@github.com" > ~/.git-credentials
-
-          sudo chown -R "$(id -u):$(id -g)" "${{ runner.temp }}/comfy-test-logs" 2>/dev/null || true
-
-          # Scope to this run's node — comfy-test names per-run dirs <SHORT>-<HHMM>
-          # where SHORT = node_repo basename minus "ComfyUI-" prefix (see
-          # comfy-test cli/dockertest.py:429). Without this scope, a stale
-          # <OTHER>-<HHMM>/dev/<platform>/results.json from a previous run on
-          # the same self-hosted runner could be picked up and published.
-          NODE_REPO_INPUT="${{ inputs.node_repo }}"
-          NODE_BASE="${NODE_REPO_INPUT##*/}"
-          SHORT_NAME="${NODE_BASE#ComfyUI-}"
-          RESULTS=$(find "${{ runner.temp }}/comfy-test-logs" -path "*/${SHORT_NAME}-*/${{ inputs.branch }}/${{ inputs.platform }}/results.json" | head -1)
-          if [ -z "$RESULTS" ]; then echo "No results found, skipping publish"; exit 0; fi
-
-          comfy-test publish "$(dirname "$RESULTS")" --repo "${{ inputs.node_repo }}"
-
-      - name: Publish results (Windows)
-        if: always() && runner.os == 'Windows'
-        shell: cmd
-        env:
-          NODE_PAT: ${{ secrets.NODE_PAT }}
-        run: |
-          set "PATH=%PY313%;%PY313_SCRIPTS%;%APPDATA%\Python\Python313\Scripts;%PATH%"
-          pip install --upgrade comfy-test
-          git config --global user.email "ci@scan2wall.com"
-          git config --global user.name "comfy-gpu-ci"
-          git config --global credential.helper store
-          echo https://x-access-token:%NODE_PAT%@github.com> "%USERPROFILE%\.git-credentials"
-          rem Scope to this run's node — comfy-test names per-run dirs <SHORT>-<HHMM>
-          rem where SHORT = node_repo basename minus "ComfyUI-" prefix (see
-          rem comfy-test cli/dockertest.py:429). Without this scope, a stale
-          rem <OTHER>-<HHMM>\dev\<platform>\results.json from a previous run on
-          rem the same self-hosted runner could be picked up and published.
-          set "NODE_REPO_INPUT=${{ inputs.node_repo }}"
-          for /f "tokens=2 delims=/" %%a in ("%NODE_REPO_INPUT%") do set "NODE_BASE=%%a"
-          set "SHORT_NAME=%NODE_BASE:ComfyUI-=%"
-          for /f "delims=" %%f in ('where /R "${{ runner.temp }}\comfy-test-logs" results.json 2^>nul ^| findstr /I /C:"\%SHORT_NAME%-" ^| findstr /I /C:"\${{ inputs.branch }}\${{ inputs.platform }}\results.json"') do set "RESULTS_DIR=%%~dpf"
-          if not defined RESULTS_DIR (echo No results found, skipping publish & exit /b 0)
-          if "%RESULTS_DIR:~-1%"=="\" set "RESULTS_DIR=%RESULTS_DIR:~0,-1%"
-          comfy-test publish "%RESULTS_DIR%" --repo "${{ inputs.node_repo }}"
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: results-${{ inputs.platform }}
-          path: ${{ runner.temp }}/comfy-test-logs/
-          if-no-files-found: ignore

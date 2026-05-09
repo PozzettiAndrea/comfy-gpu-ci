@@ -1,6 +1,10 @@
 name: CPU CI
 run-name: "${{ inputs.node_repo }} (${{ inputs.platform }}, ${{ inputs.branch }})"
 
+# Thin shim — actual logic lives in comfy-test/.github/workflows/dispatch-test.yml.
+# This repo is the entry point our self-hosted runners are enrolled against;
+# everything else (install, cache, run, publish) is in comfy-test.
+
 on:
   workflow_dispatch:
     inputs:
@@ -25,59 +29,10 @@ on:
         default: linux-cpu
 
 jobs:
-  linux-cpu:
-    if: inputs.platform == 'linux-cpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-linux.yml@v0.3.55
+  test:
+    uses: PozzettiAndrea/comfy-test/.github/workflows/dispatch-test.yml@main
     with:
       node_repo: ${{ inputs.node_repo }}
-      node_branch: ${{ inputs.branch }}
-    secrets: inherit
-
-  macos-cpu:
-    if: inputs.platform == 'macos-cpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos.yml@v0.3.55
-    with:
-      node_repo: ${{ inputs.node_repo }}
-      node_branch: ${{ inputs.branch }}
-    secrets: inherit
-
-  macos-desktop:
-    if: inputs.platform == 'macos-desktop'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-macos-desktop.yml@v0.3.55
-    with:
-      node_repo: ${{ inputs.node_repo }}
-      node_branch: ${{ inputs.branch }}
-    secrets: inherit
-
-  windows-desktop:
-    if: inputs.platform == 'windows-desktop'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows-desktop.yml@v0.3.55
-    with:
-      node_repo: ${{ inputs.node_repo }}
-      node_branch: ${{ inputs.branch }}
-    secrets: inherit
-
-  windows-cpu:
-    if: inputs.platform == 'windows-cpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows.yml@v0.3.55
-    with:
-      node_repo: ${{ inputs.node_repo }}
-      node_branch: ${{ inputs.branch }}
-    secrets: inherit
-
-  windows-portable-cpu:
-    if: inputs.platform == 'windows-portable-cpu'
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_test-windows-portable.yml@v0.3.55
-    with:
-      node_repo: ${{ inputs.node_repo }}
-      node_branch: ${{ inputs.branch }}
-    secrets: inherit
-
-  publish:
-    needs: [linux-cpu, macos-cpu, macos-desktop, windows-cpu, windows-desktop, windows-portable-cpu]
-    if: always()
-    uses: PozzettiAndrea/comfy-test/.github/workflows/_publish-results.yml@v0.3.55
-    with:
-      node_repo: ${{ inputs.node_repo }}
-      node_branch: ${{ inputs.branch }}
+      branch: ${{ inputs.branch }}
+      platform: ${{ inputs.platform }}
     secrets: inherit
