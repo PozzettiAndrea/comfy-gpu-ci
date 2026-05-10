@@ -28,7 +28,7 @@ on:
 
 jobs:
   test:
-    uses: PozzettiAndrea/comfy-test/.github/workflows/dispatch-test.yml@v0.3.81
+    uses: PozzettiAndrea/comfy-test/.github/workflows/dispatch-test.yml@v0.3.83
     with:
       node_repo: ${{ inputs.node_repo }}
       branch: ${{ inputs.branch }}
