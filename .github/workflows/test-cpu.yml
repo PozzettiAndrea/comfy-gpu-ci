@@ -30,7 +30,7 @@ on:
 
 jobs:
   test:
-    uses: PozzettiAndrea/comfy-test/.github/workflows/dispatch-test.yml@v0.3.94
+    uses: PozzettiAndrea/comfy-test/.github/workflows/dispatch-test.yml@v0.3.95
     with:
       node_repo: ${{ inputs.node_repo }}
       branch: ${{ inputs.branch }}
