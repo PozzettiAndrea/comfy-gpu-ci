@@ -1,4 +1,4 @@
-name: GPU CI
+name: CUDA CI
 run-name: "${{ inputs.node_repo }} (${{ inputs.platform }}, ${{ inputs.branch }})"
 
 # Thin shim — actual logic lives in comfy-test/.github/workflows/dispatch-test.yml.
@@ -17,18 +17,18 @@ on:
         type: string
         default: "dev"
       platform:
-        description: "GPU platform to test"
+        description: "CUDA platform to test"
         type: choice
         options:
-          - linux-gpu
-          - windows-gpu
-          - windows-portable-gpu
-          - windows-desktop-gpu
-        default: windows-gpu
+          - linux-cuda
+          - windows-cuda
+          - windows-portable-cuda
+          - windows-desktop-cuda
+        default: linux-cuda
 
 jobs:
   test:
-    uses: PozzettiAndrea/comfy-test/.github/workflows/dispatch-test.yml@v0.4.3
+    uses: PozzettiAndrea/comfy-test/.github/workflows/dispatch-test.yml@v0.4.4
     with:
       node_repo: ${{ inputs.node_repo }}
       branch: ${{ inputs.branch }}
