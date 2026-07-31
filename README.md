@@ -1,4 +1,4 @@
-# comfy-gpu-ci
+# comfy-ci
 
 Central GPU CI dispatcher for ComfyUI custom nodes.
 
